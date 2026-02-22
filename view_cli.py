@@ -75,6 +75,7 @@ class ViewCLI:
 
                     else:
                         print("Invalid task")
+
                     self.list_tasks()
 
             case 4:
@@ -86,8 +87,10 @@ class ViewCLI:
 
                     if self.controller.check_valid(task_id):
                         self.controller.set_done(int(task_id))
+
                     else:
                         print("Invalid task")
+
                     self.list_tasks()
 
             case 5:
@@ -99,8 +102,10 @@ class ViewCLI:
 
                     if self.controller.check_valid(task_id):
                         self.controller.set_undone(task_id)
+
                     else:
                         print("Invalid task")
+
                     self.list_tasks()
 
             case 6:
