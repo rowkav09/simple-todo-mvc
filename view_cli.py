@@ -128,8 +128,8 @@ class ViewCLI:
 
 
 if __name__ == "__main__":
-    todolist = model.ToDoList()
-    controller = controller.Controller(todolist)
-    view = ViewCLI(todolist, controller)
+    thetodolist = model.ToDoList()
+    thecontroller = controller.Controller(thetodolist)
+    view = ViewCLI(thetodolist, thecontroller)
     view.start()
 
