@@ -22,6 +22,7 @@ class ViewCLI:
 
     def start(self):
         self.running = True
+        self.show_commands()
 
         while self.running:
             cmd, payload = self.get_command()
