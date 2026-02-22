@@ -17,6 +17,7 @@ class ViewCLI:
             "done",
             "undone",
             "sweep",
+            "quit",
         ]
 
     def start(self):
@@ -105,6 +106,9 @@ class ViewCLI:
             case 6:
                 self.controller.sweep()
                 self.list_tasks()
+
+            case 7:
+                self.stop()
 
 
     def show_commands(self):
