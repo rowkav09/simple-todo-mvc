@@ -1,4 +1,5 @@
-import model
+from . import todolist
+
 
 
 class Controller:
@@ -14,9 +15,14 @@ class Controller:
     def remove_task(self, id: int):
         return self.todolist.remove_task(id)
 
-    def set_done(self, id: int):
-        return self.todolist.set_done(id)
+    def set_flip(self, id: int):
+        # flip the state rather than always marking done; delegate to
+        # the new toggle implementation in the model.
+        return self.todolist.toggle_task(id)
 
+    # ``set_undone`` is no longer used in the GUI, but we keep it for
+    # backwards compatibility with any external callers that relied on
+    # it.  New code should use ``set_flip`` instead.
     def set_undone(self, id: int):
         return self.todolist.set_undone(id)
 

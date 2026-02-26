@@ -1,137 +1,124 @@
-import model
-import controller
-import shlex
+from djn import todolist, controller
+import tkinter as tk
+from tkinter import simpledialog, messagebox
+from tkinter import ttk
 
 
-class ViewCLI:
-    def __init__(self, todolist: model.ToDoList, controller: controller.Controller):
-        self.todolist = todolist
-        self.controller = controller
-        self.running = False
-
-        self.commands = [
-            "help",
-            "list",
-            "add",
-            "remove",
-            "done",
-            "undone",
-            "sweep",
-            "quit",
-        ]
-
-    def start(self):
-        self.running = True
-        self.show_commands()
-
-        while self.running:
-            cmd, payload = self.get_command()
-            self.process_command(cmd, payload)
-
-    def stop(self):
-        self.running = False
-
-    def get_command(self):
-        full_cmd = input("> ")
-        payload = shlex.split(full_cmd)
-        return payload[0], payload
-
-    def process_command(self, cmd: str, payload: list):
-        if cmd not in self.commands:
-            raise Exception("Invalid command")
-
-        choice = self.commands.index(cmd)
-
-        match choice:
-            case 0:
-                self.show_commands()
-
-            case 1:
-                self.list_tasks()
-
-            case 2:
-                if len(payload) < 2:
-                    print("Nothing to add")
-
-                else:
-                    text = str(payload[1])
-
-                    if len(payload) > 2 and payload[2] in ["done", "Done"]:
-                        status = True
-                    else:
-                        status = False
-
-                    self.controller.add_task(text, status)
-                    self.list_tasks()
-
-            case 3:
-                if len(payload) < 2:
-                    print("Need a valid ID to remove")
-
-                else:
-                    task_id = int(payload[1])
-
-                    if self.controller.check_valid(task_id):
-                        self.controller.remove_task(task_id)
-
-                    else:
-                        print("Invalid task")
-
-                    self.list_tasks()
-
-            case 4:
-                if len(payload) < 2:
-                    print("Need a valid ID")
-
-                else:
-                    task_id = int(payload[1])
-
-                    if self.controller.check_valid(task_id):
-                        self.controller.set_done(int(task_id))
-
-                    else:
-                        print("Invalid task")
-
-                    self.list_tasks()
-
-            case 5:
-                if len(payload) < 2:
-                    print("Need a valid ID")
-
-                else:
-                    task_id = int(payload[1])
-
-                    if self.controller.check_valid(task_id):
-                        self.controller.set_undone(task_id)
-
-                    else:
-                        print("Invalid task")
-
-                    self.list_tasks()
-
-            case 6:
-                self.controller.sweep()
-                self.list_tasks()
-
-            case 7:
-                self.stop()
-
-
-    def show_commands(self):
-        for cmd in self.commands:
-            print(cmd)
-
-    def list_tasks(self):
+class ViewGUI:
+    def __init__(self, todo, controller_obj: controller.Controller):
+        self.todolist = todo
+        self.controller = controller_obj
+        
+        self.root = tk.Tk()
+        self.root.title("To-Do List")
+        self.root.geometry("500x600")
+        self.root.configure(background="sky blue")
+        
+        self.setup_ui()
+    
+    def setup_ui(self):
+        # Title
+        title_label = tk.Label(self.root, text="My To-Do List",highlightcolor='black', font=("Arial", 16, "bold"),background="sky blue")
+        title_label.pack(pady=10)
+        
+        # Task listbox with scrollbar
+        frame = tk.Frame(self.root)
+        frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+        
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.task_listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, font=("Arial", 10))
+        self.task_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.task_listbox.yview)
+        
+        # Buttons frame
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Add Task", command=self.add_task_dialog).grid(row=0, column=0, padx=5)
+        tk.Button(button_frame, text="Flip State", command=self.flip).grid(row=0, column=1, padx=5)
+        tk.Button(button_frame, text="Remove", command=self.remove_task).grid(row=0, column=3, padx=5)
+        tk.Button(button_frame, text="Sweep", command=self.sweep_tasks).grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+        tk.Button(button_frame, text="Quit", command=self.quit).grid(row=1, column=2, columnspan=2, padx=5, pady=5)
+        
+        self.refresh_tasks()
+    
+    def refresh_tasks(self):
+        self.task_listbox.delete(0, tk.END)
         all_tasks = self.todolist.get_all_tasks()
-
         for t in all_tasks:
+            status = "(done)" if t.done else ""
+            self.task_listbox.insert(tk.END, f"{t.id:4} - {t.text} {status}")
+    
+    def add_task_dialog(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Add Task")
+        dialog.geometry("300x150")
+        
+        tk.Label(dialog, text="Task text:").pack(pady=5)
+        text_entry = tk.Entry(dialog, width=30)
+        text_entry.pack(pady=5)
+        
+        var_done = tk.BooleanVar()
+        tk.Checkbutton(dialog, text="Mark as done", variable=var_done).pack(pady=5)
 
-            print(f'{t.id:4} - {t.text} {"(done)" if t.done else ""}')
+        def save_task():
+            text = text_entry.get()
+            if text.strip():
+                self.controller.add_task(text, var_done.get())
+                self.refresh_tasks()
+                dialog.destroy()
+            else:
+                messagebox.showwarning("Warning", "Please enter task text")
+
+        dialog.bind('<Return>', save_task())
+
+        tk.Button(dialog, text="Add", command=save_task,).pack(pady=10)
+
+
+    
+    def get_selected_task_id(self):
+        selection = self.task_listbox.curselection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a task")
+            return None
+        
+        task_text = self.task_listbox.get(selection[0])
+        task_id = int(task_text.split("-")[0].strip())
+        return task_id
+    
+    def flip(self):
+        task_id = self.get_selected_task_id()
+        if task_id and self.controller.check_valid(task_id):
+            self.controller.set_flip(task_id)
+            self.refresh_tasks()
+        else:
+            messagebox.showerror("Error", "Invalid task")
+    
+    
+    def remove_task(self):
+        task_id = self.get_selected_task_id()
+        if task_id and self.controller.check_valid(task_id):
+            self.controller.remove_task(task_id)
+            self.refresh_tasks()
+        else:
+            messagebox.showerror("Error", "Invalid task")
+    
+    def sweep_tasks(self):
+        self.controller.sweep()
+        self.refresh_tasks()
+    
+    def quit(self):
+        self.root.quit()
+    
+    def start(self):
+        self.root.mainloop()
 
 
 if __name__ == "__main__":
-    thetodolist = model.ToDoList()
+    thetodolist = todolist.ToDoList()
     thecontroller = controller.Controller(thetodolist)
-    view = ViewCLI(thetodolist, thecontroller)
+    view = ViewGUI(thetodolist, thecontroller)
     view.start()
 
